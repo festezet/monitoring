@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Monitor - Temps Réel</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        h1 {
+            color: #667eea;
+            font-size: 28px;
+        }
+
+        .status {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.connected {
+            background: #10b981;
+        }
+
+        .status-dot.disconnected {
+            background: #ef4444;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .card h2 {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #667eea;
+            border-bottom: 2px solid #f3f4f6;
+            padding-bottom: 10px;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #f3f4f6;
+        }
+
+        .stat-row:last-child {
+            border-bottom: none;
+        }
+
+        .stat-label {
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        .stat-value {
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .stat-value.high {
+            color: #ef4444;
+        }
+
+        .stat-value.medium {
+            color: #f59e0b;
+        }
+
+        .stat-value.low {
+            color: #10b981;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 250px;
+            margin-top: 15px;
+        }
+
+        .process-table {
+            width: 100%;
+            font-size: 13px;
+            margin-top: 10px;
+        }
+
+        .process-table th {
+            text-align: left;
+            padding: 8px;
+            background: #f3f4f6;
+            font-weight: 600;
+        }
+
+        .process-table td {
+            padding: 8px;
+            border-bottom: 1px solid #f3f4f6;
+        }
+
+        .process-table tr:hover {
+            background: #f9fafb;
+        }
+
+        .alert {
+            background: #fef2f2;
+            border-left: 4px solid #ef4444;
+            padding: 12px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            display: none;
+        }
+
+        .alert.show {
+            display: block;
+        }
+
+        .gpu-icon {
+            display: inline-block;
+            margin-right: 5px;
+        }
+
+        .timestamp {
+            font-size: 12px;
+            color: #9ca3af;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div>
+                <h1>📊 System Monitor - Temps Réel</h1>
+                <p class="timestamp" id="timestamp">Dernière mise à jour : --</p>
+            </div>
+            <div class="status">
+                <div class="status-indicator">
+                    <div class="status-dot" id="status-dot"></div>
+                    <span id="status-text">Connexion...</span>
+                </div>
+            </div>
+        </header>
+
+        <div class="alert" id="alert">
+            ⚠️ <strong>Alerte :</strong> <span id="alert-message"></span>
+        </div>
+
+        <div class="grid">
+            <!-- CPU Card -->
+            <div class="card">
+                <h2>🖥️ CPU</h2>
+                <div class="stat-row">
+                    <span class="stat-label">Utilisation moyenne</span>
+                    <span class="stat-value" id="cpu-avg">-- %</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Nombre de cœurs</span>
+                    <span class="stat-value" id="cpu-cores">--</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Fréquence</span>
+                    <span class="stat-value" id="cpu-freq">-- MHz</span>
+                </div>
+                <div class="chart-container">
+                    <canvas id="cpuChart"></canvas>
+                </div>
+            </div>
+
+            <!-- RAM Card -->
+            <div class="card">
+                <h2>💾 RAM</h2>
+                <div class="stat-row">
+                    <span class="stat-label">Utilisée</span>
+                    <span class="stat-value" id="ram-used">-- GB</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Disponible</span>
+                    <span class="stat-value" id="ram-available">-- GB</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Total</span>
+                    <span class="stat-value" id="ram-total">-- GB</span>
+                </div>
+                <div class="chart-container">
+                    <canvas id="ramChart"></canvas>
+                </div>
+            </div>
+
+            <!-- GPU Card -->
+            <div class="card" id="gpu-card">
+                <h2><span class="gpu-icon">🎮</span> GPU</h2>
+                <div id="gpu-stats">
+                    <div class="stat-row">
+                        <span class="stat-label">Modèle</span>
+                        <span class="stat-value" id="gpu-name">--</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Utilisation</span>
+                        <span class="stat-value" id="gpu-util">-- %</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">VRAM utilisée</span>
+                        <span class="stat-value" id="gpu-vram">-- GB</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Température</span>
+                        <span class="stat-value" id="gpu-temp">-- °C</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Consommation</span>
+                        <span class="stat-value" id="gpu-power">-- W</span>
+                    </div>
+                </div>
+                <!-- Processus GPU -->
+                <div id="gpu-processes" style="margin-top: 15px; padding-top: 15px; border-top: 2px solid #f3f4f6;">
+                    <h3 style="font-size: 14px; color: #667eea; margin-bottom: 10px;">📦 Processus utilisant la VRAM</h3>
+                    <div id="gpu-process-list" style="font-size: 13px; color: #6b7280;">
+                        Aucun processus GPU actif
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="gpuChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Top Processes Card -->
+            <div class="card" style="grid-column: 1 / -1;">
+                <h2>⚡ Top Processus (CPU)</h2>
+                <table class="process-table">
+                    <thead>
+                        <tr>
+                            <th>PID</th>
+                            <th>Nom</th>
+                            <th>CPU %</th>
+                            <th>RAM %</th>
+                            <th>RAM (MB)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="process-table-body">
+                        <tr><td colspan="5">Chargement...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration WebSocket
+        const WS_URL = `ws://${window.location.hostname}:8888/ws`;
+        let ws = null;
+        let reconnectInterval = null;
+
+        // Historique pour graphiques (60 points = 2 minutes à 2sec/update)
+        const MAX_HISTORY = 60;
+        const history = {
+            timestamps: [],
+            cpu: [],
+            ram: [],
+            gpu_util: [],
+            gpu_vram: [],
+            gpu_temp: []
+        };
+
+        // Initialisation des graphiques
+        const cpuChart = new Chart(document.getElementById('cpuChart'), {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'CPU %',
+                    data: [],
+                    borderColor: '#667eea',
+                    backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { beginAtZero: true, max: 100 }
+                },
+                plugins: {
+                    legend: { display: false }
+                }
+            }
+        });
+
+        const ramChart = new Chart(document.getElementById('ramChart'), {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'RAM %',
+                    data: [],
+                    borderColor: '#10b981',
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { beginAtZero: true, max: 100 }
+                },
+                plugins: {
+                    legend: { display: false }
+                }
+            }
+        });
+
+        const gpuChart = new Chart(document.getElementById('gpuChart'), {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [
+                    {
+                        label: 'GPU %',
+                        data: [],
+                        borderColor: '#ef4444',
+                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                        tension: 0.4,
+                        fill: true,
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: 'Temp °C',
+                        data: [],
+                        borderColor: '#f59e0b',
+                        backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                        tension: 0.4,
+                        fill: false,
+                        yAxisID: 'y1'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { beginAtZero: true, max: 100, position: 'left' },
+                    y1: { beginAtZero: true, max: 100, position: 'right', grid: { drawOnChartArea: false } }
+                }
+            }
+        });
+
+        function connectWebSocket() {
+            ws = new WebSocket(WS_URL);
+
+            ws.onopen = () => {
+                console.log('✅ WebSocket connecté');
+                document.getElementById('status-dot').className = 'status-dot connected';
+                document.getElementById('status-text').textContent = 'Connecté';
+                if (reconnectInterval) {
+                    clearInterval(reconnectInterval);
+                    reconnectInterval = null;
+                }
+            };
+
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                updateUI(data);
+            };
+
+            ws.onerror = (error) => {
+                console.error('❌ Erreur WebSocket:', error);
+            };
+
+            ws.onclose = () => {
+                console.log('🔌 WebSocket déconnecté');
+                document.getElementById('status-dot').className = 'status-dot disconnected';
+                document.getElementById('status-text').textContent = 'Déconnecté';
+
+                // Reconnexion automatique
+                if (!reconnectInterval) {
+                    reconnectInterval = setInterval(() => {
+                        console.log('🔄 Tentative de reconnexion...');
+                        connectWebSocket();
+                    }, 3000);
+                }
+            };
+        }
+
+        function updateUI(data) {
+            // Timestamp
+            const time = new Date(data.timestamp).toLocaleTimeString('fr-FR');
+            document.getElementById('timestamp').textContent = `Dernière mise à jour : ${time}`;
+
+            // CPU
+            const cpuAvg = data.cpu.percent_avg.toFixed(1);
+            document.getElementById('cpu-avg').textContent = `${cpuAvg}%`;
+            document.getElementById('cpu-avg').className = `stat-value ${getColorClass(cpuAvg)}`;
+            document.getElementById('cpu-cores').textContent = data.cpu.core_count;
+            document.getElementById('cpu-freq').textContent = `${Math.round(data.cpu.frequency_mhz)} MHz`;
+
+            // RAM
+            document.getElementById('ram-used').textContent = `${data.memory.used_gb} GB`;
+            document.getElementById('ram-available').textContent = `${data.memory.available_gb} GB`;
+            document.getElementById('ram-total').textContent = `${data.memory.total_gb} GB`;
+
+            // GPU
+            if (data.gpu.available) {
+                document.getElementById('gpu-name').textContent = data.gpu.name;
+                document.getElementById('gpu-util').textContent = `${data.gpu.utilization_percent}%`;
+                document.getElementById('gpu-util').className = `stat-value ${getColorClass(data.gpu.utilization_percent)}`;
+                document.getElementById('gpu-vram').textContent = `${data.gpu.memory_used_gb} / ${data.gpu.memory_total_gb} GB`;
+                document.getElementById('gpu-temp').textContent = `${data.gpu.temperature_c}°C`;
+                document.getElementById('gpu-temp').className = `stat-value ${getTempColorClass(data.gpu.temperature_c)}`;
+                document.getElementById('gpu-power').textContent = `${data.gpu.power_usage_w} / ${data.gpu.power_limit_w} W`;
+
+                // Processus GPU
+                const gpuProcessList = document.getElementById('gpu-process-list');
+                if (data.gpu.processes && data.gpu.processes.length > 0) {
+                    gpuProcessList.innerHTML = data.gpu.processes.map(proc => `
+                        <div style="display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #f3f4f6;">
+                            <span><strong>${proc.name}</strong> (PID: ${proc.pid})</span>
+                            <span style="color: #ef4444; font-weight: 600;">${proc.vram_mb} MB</span>
+                        </div>
+                    `).join('');
+                } else {
+                    gpuProcessList.innerHTML = '<span style="color: #9ca3af;">Aucun processus GPU actif</span>';
+                }
+            } else {
+                document.getElementById('gpu-stats').innerHTML = '<p style="color: #9ca3af;">GPU non disponible</p>';
+            }
+
+            // Top Processes
+            const tbody = document.getElementById('process-table-body');
+            tbody.innerHTML = data.top_processes.map(proc => `
+                <tr>
+                    <td>${proc.pid}</td>
+                    <td>${proc.name}</td>
+                    <td>${proc.cpu_percent}%</td>
+                    <td>${proc.memory_percent}%</td>
+                    <td>${proc.memory_mb}</td>
+                </tr>
+            `).join('');
+
+            // Mise à jour historique et graphiques
+            updateHistory(time, data);
+
+            // Alertes
+            checkAlerts(data);
+        }
+
+        function updateHistory(time, data) {
+            history.timestamps.push(time);
+            history.cpu.push(data.cpu.percent_avg);
+            history.ram.push(data.memory.percent);
+
+            if (data.gpu.available) {
+                history.gpu_util.push(data.gpu.utilization_percent);
+                history.gpu_vram.push((data.gpu.memory_used_gb / data.gpu.memory_total_gb) * 100);
+                history.gpu_temp.push(data.gpu.temperature_c);
+            }
+
+            // Limiter historique
+            if (history.timestamps.length > MAX_HISTORY) {
+                Object.keys(history).forEach(key => history[key].shift());
+            }
+
+            // Mettre à jour graphiques
+            cpuChart.data.labels = history.timestamps;
+            cpuChart.data.datasets[0].data = history.cpu;
+            cpuChart.update('none');
+
+            ramChart.data.labels = history.timestamps;
+            ramChart.data.datasets[0].data = history.ram;
+            ramChart.update('none');
+
+            if (data.gpu.available) {
+                gpuChart.data.labels = history.timestamps;
+                gpuChart.data.datasets[0].data = history.gpu_util;
+                gpuChart.data.datasets[1].data = history.gpu_temp;
+                gpuChart.update('none');
+            }
+        }
+
+        function checkAlerts(data) {
+            const alert = document.getElementById('alert');
+            const alertMessage = document.getElementById('alert-message');
+
+            // Priorité 1 : Menace critique mémoire (risque crash!)
+            if (data.memory_threats && data.memory_threats.critical_alert) {
+                const topThreat = data.memory_threats.threats[0];
+                if (topThreat) {
+                    alertMessage.innerHTML = `🚨 <strong>DANGER CRASH SYSTÈME!</strong> RAM critique (${data.memory_threats.available_gb} GB libre). Processus: <strong>${topThreat.name}</strong> (${topThreat.memory_gb} GB, PID: ${topThreat.pid})`;
+                } else {
+                    alertMessage.textContent = `🚨 DANGER! RAM critique (${data.memory_threats.available_gb} GB disponible)`;
+                }
+                alert.classList.add('show');
+                alert.style.borderLeft = '4px solid #dc2626';  // Rouge intense
+            }
+            // Priorité 2 : Processus gourmand détecté (warning)
+            else if (data.memory_threats && data.memory_threats.threats.length > 0) {
+                const topThreat = data.memory_threats.threats[0];
+                alertMessage.innerHTML = `⚠️ Processus gourmand détecté: <strong>${topThreat.name}</strong> utilise ${topThreat.memory_gb} GB RAM (${topThreat.memory_percent}%, PID: ${topThreat.pid})`;
+                alert.classList.add('show');
+                alert.style.borderLeft = '4px solid #f59e0b';  // Orange
+            }
+            // Priorité 3 : Autres alertes
+            else if (data.cpu.percent_avg > 90) {
+                alertMessage.textContent = `CPU surchargé (${data.cpu.percent_avg.toFixed(1)}%)`;
+                alert.classList.add('show');
+                alert.style.borderLeft = '4px solid #ef4444';  // Rouge
+            } else if (data.memory.percent > 90) {
+                alertMessage.textContent = `RAM presque saturée (${data.memory.percent}%)`;
+                alert.classList.add('show');
+                alert.style.borderLeft = '4px solid #ef4444';  // Rouge
+            } else if (data.gpu.available && data.gpu.temperature_c > 80) {
+                alertMessage.textContent = `GPU chaud (${data.gpu.temperature_c}°C)`;
+                alert.classList.add('show');
+                alert.style.borderLeft = '4px solid #ef4444';  // Rouge
+            } else {
+                alert.classList.remove('show');
+            }
+        }
+
+        function getColorClass(value) {
+            if (value > 80) return 'high';
+            if (value > 50) return 'medium';
+            return 'low';
+        }
+
+        function getTempColorClass(temp) {
+            if (temp > 80) return 'high';
+            if (temp > 65) return 'medium';
+            return 'low';
+        }
+
+        // Démarrer connexion WebSocket au chargement
+        connectWebSocket();
+    </script>
+</body>
+</html>
