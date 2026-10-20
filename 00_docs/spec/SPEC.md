@@ -77,12 +77,12 @@ Fabrice a besoin d'un tableau de bord léger et réactif pour surveiller les res
 
 **Communication asynchrone** : FastAPI async + WebSocket permettent de gérer plusieurs connexions simultanées sans blocage. Le backend collecte les métriques toutes les 2 secondes et les diffuse à tous les clients connectés.
 
-**Détection menaces mémoire** : fonction `detect_memory_threats()` appelée à chaque cycle, logging automatique dans `/app/logs/memory_threats.log` (Docker) ou `/data/projects/monitoring/logs/memory_threats.log` (local).
+**Détection menaces mémoire** : fonction `detect_memory_threats()` appelée à chaque cycle, logging automatique dans `/app/logs/memory_threats.log` (Docker) ou `/data/projects/PRJ-014-monitoring/logs/memory_threats.log` (local).
 
 ### 3.2 Structure des fichiers
 
 ```
-/data/projects/monitoring/
+/data/projects/PRJ-014-monitoring/
 ├── backend/
 │   ├── main.py              # Application FastAPI (335 lignes)
 │   ├── requirements.txt     # Dépendances Python
@@ -359,7 +359,7 @@ pid: host         # Namespace PID hôte (voir tous processus)
 
 **Démarrage** :
 ```bash
-cd /data/projects/monitoring
+cd /data/projects/PRJ-014-monitoring
 docker-compose up -d
 ```
 
@@ -376,7 +376,7 @@ docker-compose logs -f system-monitor
 
 **Installation** :
 ```bash
-cd /data/projects/monitoring/backend
+cd /data/projects/PRJ-014-monitoring/backend
 pip install -r requirements.txt
 ```
 

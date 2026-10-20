@@ -22,7 +22,7 @@ Application de monitoring systeme temps reel pour surveiller CPU, GPU (NVIDIA), 
 ### Option 1 : Docker Compose (Recommandé)
 
 ```bash
-cd /data/projects/monitoring
+cd /data/projects/PRJ-014-monitoring
 docker-compose up -d
 ```
 
@@ -31,7 +31,7 @@ Accès : http://localhost:8888
 ### Option 2 : Mode développement (Python direct)
 
 ```bash
-cd /data/projects/monitoring/backend
+cd /data/projects/PRJ-014-monitoring/backend
 pip install -r requirements.txt
 python main.py
 ```
@@ -58,7 +58,7 @@ Accès : http://localhost:8888
 ## 📂 Structure
 
 ```
-/data/projects/monitoring/
+/data/projects/PRJ-014-monitoring/
 ├── backend/
 │   ├── main.py              # Application FastAPI
 │   ├── requirements.txt     # Dépendances Python

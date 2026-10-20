@@ -23,7 +23,7 @@ L'alerte visuelle en temps réel était secondaire : *"l'alerte n'est pas trop i
 
 ### 1. Fonction de Détection des Menaces Mémoire
 
-**Fichier** : `/data/projects/monitoring/backend/main.py`
+**Fichier** : `/data/projects/PRJ-014-monitoring/backend/main.py`
 
 Ajout de `detect_memory_threats()` avec :
 
@@ -61,7 +61,7 @@ Ajout de `detect_memory_threats()` avec :
 
 **Configuration** : Python `logging` module
 
-**Fichier de log** : `/data/projects/monitoring/logs/memory_threats.log`
+**Fichier de log** : `/data/projects/PRJ-014-monitoring/logs/memory_threats.log`
 
 **Format** :
 ```
@@ -112,7 +112,7 @@ memory_logger.addHandler(handler)
 
 **Usage** :
 ```bash
-cd /data/projects/monitoring
+cd /data/projects/PRJ-014-monitoring
 python3 test_memory_real.py 3    # Alloue 3 GB
 python3 test_memory_real.py 5    # Alloue 5 GB
 ```
@@ -121,7 +121,7 @@ python3 test_memory_real.py 5    # Alloue 5 GB
 
 ### 4. Documentation PORT_MAPPING.md
 
-**Fichier** : `/data/projects/monitoring/PORT_MAPPING.md`
+**Fichier** : `/data/projects/PRJ-014-monitoring/PORT_MAPPING.md`
 
 Créé suite à la demande :
 > "Note dans la liste des actions qu'il faudra un fichier de mapping des adresses locales et des applications qui les utilise"
@@ -138,13 +138,13 @@ Créé suite à la demande :
 ## 🔧 Corrections et Ajustements
 
 ### Problème 1 : Chemin des logs dans Docker
-**Erreur** : `FileNotFoundError: /data/projects/monitoring/logs`
+**Erreur** : `FileNotFoundError: /data/projects/PRJ-014-monitoring/logs`
 
 **Cause** : Chemin hôte n'existe pas dans le container
 
 **Solution** :
 ```python
-LOG_DIR = Path("/app/logs") if os.path.exists("/app") else Path("/data/projects/monitoring/logs")
+LOG_DIR = Path("/app/logs") if os.path.exists("/app") else Path("/data/projects/PRJ-014-monitoring/logs")
 LOG_DIR.mkdir(parents=True, exist_ok=True)
 ```
 
@@ -168,7 +168,7 @@ LOG_DIR.mkdir(parents=True, exist_ok=True)
 ## 📊 Architecture Finale
 
 ```
-/data/projects/monitoring/
+/data/projects/PRJ-014-monitoring/
 ├── backend/
 │   ├── main.py              # FastAPI + détection menaces + logging
 │   └── Dockerfile
@@ -248,7 +248,7 @@ python3 test_memory_real.py 5
 
 **Action post-crash** :
 ```bash
-cat /data/projects/monitoring/logs/memory_threats.log
+cat /data/projects/PRJ-014-monitoring/logs/memory_threats.log
 ```
 → Identifier le processus responsable avant OOM killer
 
@@ -280,14 +280,14 @@ cat /data/projects/monitoring/logs/memory_threats.log
 **Commandes** :
 ```bash
 # Démarrer le monitoring
-cd /data/projects/monitoring
+cd /data/projects/PRJ-014-monitoring
 docker-compose up -d
 
 # Voir les logs en temps réel
 docker logs -f system-monitor
 
 # Consulter les menaces mémoire
-cat /data/projects/monitoring/logs/memory_threats.log
+cat /data/projects/PRJ-014-monitoring/logs/memory_threats.log
 
 # Test de charge (5 GB)
 python3 test_memory_real.py 5
@@ -316,14 +316,14 @@ curl http://localhost:8888/api/stats | python3 -m json.tool
 ## 📚 Fichiers Modifiés/Créés
 
 ### Modifiés
-- `/data/projects/monitoring/backend/main.py` : Ajout détection + logging
-- `/data/projects/monitoring/docker-compose.yml` : Volume logs
-- `/data/projects/monitoring/frontend/index.html` : Amélioration alertes visuelles
+- `/data/projects/PRJ-014-monitoring/backend/main.py` : Ajout détection + logging
+- `/data/projects/PRJ-014-monitoring/docker-compose.yml` : Volume logs
+- `/data/projects/PRJ-014-monitoring/frontend/index.html` : Amélioration alertes visuelles
 
 ### Créés
-- `/data/projects/monitoring/test_memory_real.py` : Script test NumPy
-- `/data/projects/monitoring/PORT_MAPPING.md` : Documentation ports
-- `/data/projects/monitoring/logs/` : Dossier logs persistants
+- `/data/projects/PRJ-014-monitoring/test_memory_real.py` : Script test NumPy
+- `/data/projects/PRJ-014-monitoring/PORT_MAPPING.md` : Documentation ports
+- `/data/projects/PRJ-014-monitoring/logs/` : Dossier logs persistants
 - `/home/fabrice-ryzen/docker-infrastructure/docs/SESSION_2025-11-15_SYSTEM_MONITOR_MEMORY_LOGGING.md` : Cette documentation
 
 ---
@@ -331,7 +331,7 @@ curl http://localhost:8888/api/stats | python3 -m json.tool
 ## ✅ Résultat Final
 
 ✅ **Détection automatique** des processus menaçants (>2GB, >4GB)
-✅ **Logging persistant** dans `/data/projects/monitoring/logs/memory_threats.log`
+✅ **Logging persistant** dans `/data/projects/PRJ-014-monitoring/logs/memory_threats.log`
 ✅ **Dashboard temps réel** avec alertes visuelles (orange/rouge)
 ✅ **Documentation complète** : PORT_MAPPING.md + session log
 ✅ **Tests validés** : Scripts NumPy fonctionnels pour simulation

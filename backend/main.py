@@ -28,7 +28,7 @@ except:
 
 # Configuration logging menaces mémoire
 # Utiliser chemin relatif pour compatibilité Docker
-LOG_DIR = Path("/app/logs") if os.path.exists("/app") else Path("/data/projects/monitoring/logs")
+LOG_DIR = Path("/app/logs") if os.path.exists("/app") else Path("/data/projects/PRJ-014-monitoring/logs")
 LOG_DIR.mkdir(parents=True, exist_ok=True)
 MEMORY_THREATS_LOG = LOG_DIR / "memory_threats.log"
 

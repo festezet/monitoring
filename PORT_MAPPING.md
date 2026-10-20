@@ -53,7 +53,7 @@ Ce fichier documente tous les ports utilisés par les applications et services p
 ### Recommandations
 1. **Avant test de charge** : Vérifier qu'aucun service critique n'est en cours
 2. **Monitoring** : System Monitor détecte automatiquement processus >2GB
-3. **Logs** : Consulter `/data/projects/monitoring/logs/memory_threats.log` après crash
+3. **Logs** : Consulter `/data/projects/PRJ-014-monitoring/logs/memory_threats.log` après crash
 
 ## Commandes utiles
 
@@ -68,10 +68,10 @@ docker ps --format "table {{.Names}}\t{{.Ports}}"
 nvidia-smi
 
 # Voir logs menaces mémoire
-cat /data/projects/monitoring/logs/memory_threats.log
+cat /data/projects/PRJ-014-monitoring/logs/memory_threats.log
 
 # Tester charge mémoire (3 GB)
-cd /data/projects/monitoring
+cd /data/projects/PRJ-014-monitoring
 python3 test_memory_real.py 3
 ```
 
